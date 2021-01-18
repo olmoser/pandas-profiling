@@ -11,20 +11,30 @@ from pandas_profiling.report.formatters import get_fmt_mapping
 # Initializing Jinja
 # from pandas_profiling.utils.paths import get_html_template_path
 
-package_loader = jinja2.PackageLoader(
-    "pandas_profiling", "report/presentation/flavours/html/templates"
-)
-jinja2_env = jinja2.Environment(
-    lstrip_blocks=True, trim_blocks=True, loader=package_loader
-)
-fmt_mapping = get_fmt_mapping()
-for key, value in fmt_mapping.items():
-    jinja2_env.filters[key] = value
+jinja2_env = None
 
-jinja2_env.filters["fmt_badge"] = lambda x: re.sub(
-    r"\((\d+)\)", r'<span class="badge">\1</span>', x
-)
-jinja2_env.filters["dynamic_filter"] = lambda x, v: fmt_mapping[v](x)
+
+def prepare_jinja2_env():
+    package_loaders = []
+    if config["custom_template_loader_path"] is not None:
+        package_loaders.append(jinja2.PackageLoader("pandas_extension"))
+
+    package_loaders.append(jinja2.PackageLoader("pandas_profiling", "report/presentation/flavours/html/templates"))
+
+    package_loader = jinja2.ChoiceLoader(package_loaders)
+
+    _jinja2_env = jinja2.Environment(
+        lstrip_blocks=True, trim_blocks=True, loader=package_loader
+    )
+    fmt_mapping = get_fmt_mapping()
+    for key, value in fmt_mapping.items():
+        _jinja2_env.filters[key] = value
+
+    _jinja2_env.filters["fmt_badge"] = lambda x: re.sub(
+        r"\((\d+)\)", r'<span class="badge">\1</span>', x
+    )
+    _jinja2_env.filters["dynamic_filter"] = lambda x, v: fmt_mapping[v](x)
+    return _jinja2_env
 
 
 def template(template_name: str) -> jinja2.Template:
@@ -37,6 +47,10 @@ def template(template_name: str) -> jinja2.Template:
       The jinja2 environment.
 
     """
+    global jinja2_env
+    if jinja2_env is None:
+        jinja2_env = prepare_jinja2_env()
+
     return jinja2_env.get_template(template_name)
 
 

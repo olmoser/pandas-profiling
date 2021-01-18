@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="Profile report generated with the `pandas-profiling` Python package">
+	<meta name="author" content="Simon Brugman and the open source community.">
+	<meta name="generator" content="Pandas Profiling v{{ version }}"/>
+	<meta name="url" content="https://github.com/pandas-profiling/pandas-profiling">
+	<meta name="date" content="{{ date }}">
+
+	<title>{{ title }}</title>
+
+	{#	{% include 'wrapper/style.html' %}#}
+	{#	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />#}
+	{#	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous" />#}
+	<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/flatly/bootstrap.min.css" rel="stylesheet"
+		  integrity="sha384-+ENW/yibaokMnme+vBLnHMphUYxHs34h9lpdbSLuAwGkOKFRl4C34WkjazBtb7eT" crossorigin="anonymous"/>
+	<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/flatly/bootstrap.min.css" rel="stylesheet"
+		  integrity="sha384-+ENW/yibaokMnme+vBLnHMphUYxHs34h9lpdbSLuAwGkOKFRl4C34WkjazBtb7eT" crossorigin="anonymous"/>
+	<style>{% include 'wrapper/assets/style.css' %}</style>
+	<script>
+		{#dataSetIds = [{% for dataset in datasets %}'{{ dataset.id }}-ds',{% endfor %}]#}
+		activeDatasetId = null;
+		{#reportIds = [{% for report in reports %}'{{ report.id }}',{% endfor %}]#}
+		dataSetReportMapping = {
+			{% for dataset in datasets %}
+				'{{ dataset.id }}-ds': [{% for report in dataset.reports %}'{{ report.id }}-report',{% endfor %}],
+			{% endfor %}
+		}
+
+		function toggleDataset(dsId) {
+			console.log(`Showing ds: ${dsId}`)
+			activeDatasetId = dsId
+			$(`#${dsId}`).show()
+			$(`#${dsId}-nav`).addClass('active')
+			Object.keys(dataSetReportMapping).filter(id => id !== dsId).forEach(id => {
+				console.log(`Hiding ds ${id}`)
+				$(`#${id}`).hide()
+				$(`#${id}-nav`).removeClass("active")
+			})
+		}
+
+		function toggleReport(reportId) {
+			console.log(`Showing report: ${reportId}`)
+			$(`#${reportId}`).show()
+			$(`#${reportId}-nav`).addClass('active')
+			dataSetReportMapping[activeDatasetId].filter(id => id !== reportId).forEach(id => {
+				console.log(`Hiding report ${id}`)
+				$(`#${id}`).hide()
+				$(`#${id}-nav`).removeClass("active")
+			})
+		}
+
+	</script>
+	<link href="crayon.css" rel="stylesheet"/>
+</head>
+
+<body>
+<a class="anchor-pos" id="top"></a>
+<nav class="navbar navbar-default navbar-fixed-top">
+	<div class="container-fluid">
+		<div class="navbar-header">
+			{% if logo | length > 0 %}
+				<a class="navbar-brand" href="#top">
+					<img alt="Logo" src="{{ logo }}" style="max-height: 20px;">
+				</a>
+			{% endif %}
+
+			<a class="navbar-brand anchor" href="#top">Datasets</a>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-right">
+				{% for dataset in datasets %}
+					<li id="{{ dataset.id }}-ds-nav">
+						<a class="anchor" onclick='toggleDataset("{{ dataset.id }}-ds")'>{{ dataset.name }}</a>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+</nav>
+<div style="height: 40px">
+
+</div>
+<div class="container">
+	{% for dataset in datasets %}
+		<div class="dataset-nav" id="{{ dataset.id }}-ds">
+			<nav class="navbar navbar-default">
+				<div class="navbar-header">
+					{% if logo | length > 0 %}
+						<a class="navbar-brand" href="#top">
+							<img alt="Logo" src="{{ logo }}" style="max-height: 20px;">
+						</a>
+					{% endif %}
+
+					<a class="navbar-brand anchor" href="#top">{{ dataset.name }}</a>
+				</div>
+				<div id="navbar" class="navbar-collapse collapse">
+					<ul class="nav navbar-nav navbar-right">
+						{% for report in dataset.reports %}
+							<li id="{{ report.id }}-report-nav">
+								<a class="anchor" onclick='toggleReport("{{ report.id }}-report")'>{{ report.title }}</a>
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+			</nav>
+
+			{% for report in dataset.reports %}
+				<div id="{{ report.id }}-report">
+					{{ report.to_html() }}
+				</div>
+			{% endfor %}
+
+		</div>
+	{% endfor %}
+</div>
+{#{% include 'wrapper/footer.html' %}#}
+{% include 'wrapper/javascript.html' %}
+<script>
+	toggleDataset(Object.keys(dataSetReportMapping)[0])
+	toggleReport(dataSetReportMapping[Object.keys(dataSetReportMapping)[0]][0])
+</script>
+</body>
+</html>

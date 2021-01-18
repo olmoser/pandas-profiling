@@ -42,3 +42,7 @@
 {% else %}
     <link rel="stylesheet" href="{{ file_name }}_assets/css/style.css" />
 {% endif %}
+
+{%- if additional_styles != 'None' -%}
+    <link rel="stylesheet" href="{{ additional_styles }}" />
+{% endif %}

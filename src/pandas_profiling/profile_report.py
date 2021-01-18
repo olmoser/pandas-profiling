@@ -1,7 +1,10 @@
 import json
 import warnings
+import uuid
 from pathlib import Path
 from typing import Optional, Union
+
+from importlib import import_module
 
 import numpy as np
 import pandas as pd
@@ -10,7 +13,6 @@ from tqdm.auto import tqdm
 from pandas_profiling.config import config
 from pandas_profiling.model.describe import describe as describe_df
 from pandas_profiling.model.messages import MessageType
-from pandas_profiling.report import get_report_structure
 from pandas_profiling.report.presentation.flavours.html.templates import (
     create_html_assets,
 )
@@ -36,6 +38,8 @@ class ProfileReport(SerializeReport):
         sample=None,
         config_file: Union[Path, str] = None,
         lazy: bool = True,
+        custom_report=None,
+        id=None,
         **kwargs,
     ):
         """Generate a ProfileReport based on a pandas DataFrame
@@ -86,6 +90,8 @@ class ProfileReport(SerializeReport):
         self._html = None
         self._widgets = None
         self._json = None
+        self._custom_report = custom_report
+        self._id = uuid.uuid4() if id is None else id
 
         if df is not None:
             # preprocess df
@@ -167,8 +173,14 @@ class ProfileReport(SerializeReport):
             self._df_hash = hash_dataframe(self.df)
         return self._df_hash
 
+
     @property
     def report(self):
+        if self._custom_report is not None:
+            get_report_structure = import_module(self._custom_report).get_report_structure
+        else:
+            from pandas_profiling.report import get_report_structure
+
         if self._report is None:
             self._report = get_report_structure(self.description_set)
         return self._report
@@ -190,6 +202,10 @@ class ProfileReport(SerializeReport):
         if self._widgets is None:
             self._widgets = self._render_widgets()
         return self._widgets
+
+    @property
+    def id(self):
+        return self._id
 
     def get_duplicates(self, df=None) -> Optional[pd.DataFrame]:
         """Get duplicate rows and counts based on the configuration
