@@ -6,7 +6,7 @@ import pandas as pd
 import jinja2
 
 from pandas_profiling import ProfileReport
-from pandas_profiling.data_set import DataSet
+from pandas_profiling.data_set import DataSet, DataSetReport
 from pandas_profiling.utils.cache import cache_file
 
 
@@ -157,22 +157,10 @@ if __name__ == "__main__":
         ("sales_report", "Sales", custom_template_path),
     ]]
 
-    # setup template rendering for the dataset template
-    package_loader = jinja2.ChoiceLoader([
-        jinja2.PackageLoader("pandas_extension", "templates"),
-        jinja2.PackageLoader("pandas_profiling", "report/presentation/flavours/html/templates"),
-    ])
-
-    jinja2_env = jinja2.Environment(
-        lstrip_blocks=True, trim_blocks=True, loader=package_loader,
-    )
-
     ds1 = DataSet('Census All Ages', reports_df1)
     ds2 = DataSet('Census Young Ages', reports_df2)
 
-    output = jinja2_env.get_template('dataset.html').render(datasets=[ds1, ds2])
+    ds_report = DataSetReport('demo', [ds1, ds2], lineage='A[All Ages DataSet] -->|age < 35| B[Young Timers Dataset]')
+    ds_report.write_to_file()
 
-    # dump the rendered HTML to a file
-    output_file = Path(str("report.html"))
-    output_file.write_text(output, "utf-8")
 

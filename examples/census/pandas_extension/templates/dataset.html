@@ -20,25 +20,11 @@
 		  integrity="sha384-+ENW/yibaokMnme+vBLnHMphUYxHs34h9lpdbSLuAwGkOKFRl4C34WkjazBtb7eT" crossorigin="anonymous"/>
 	<style>{% include 'wrapper/assets/style.css' %}</style>
 	<script>
-		{#dataSetIds = [{% for dataset in datasets %}'{{ dataset.id }}-ds',{% endfor %}]#}
 		activeDatasetId = null;
-		{#reportIds = [{% for report in reports %}'{{ report.id }}',{% endfor %}]#}
 		dataSetReportMapping = {
 			{% for dataset in datasets %}
 				'{{ dataset.id }}-ds': [{% for report in dataset.reports %}'{{ report.id }}-report',{% endfor %}],
 			{% endfor %}
-		}
-
-		function toggleDataset(dsId) {
-			console.log(`Showing ds: ${dsId}`)
-			activeDatasetId = dsId
-			$(`#${dsId}`).show()
-			$(`#${dsId}-nav`).addClass('active')
-			Object.keys(dataSetReportMapping).filter(id => id !== dsId).forEach(id => {
-				console.log(`Hiding ds ${id}`)
-				$(`#${id}`).hide()
-				$(`#${id}-nav`).removeClass("active")
-			})
 		}
 
 		function toggleReport(reportId) {
@@ -52,7 +38,24 @@
 			})
 		}
 
+
+		function toggleDataset(dsId) {
+			console.log(`Showing ds: ${dsId}`)
+			activeDatasetId = dsId
+			$(`#${dsId}`).show()
+			$(`#${dsId}-nav`).addClass('active')
+			Object.keys(dataSetReportMapping).filter(id => id !== dsId).forEach(id => {
+				console.log(`Hiding ds ${id}`)
+				$(`#${id}`).hide()
+				$(`#${id}-nav`).removeClass("active")
+			})
+
+			toggleReport(dataSetReportMapping[dsId][0])
+		}
+
+
 	</script>
+	<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 	<link href="crayon.css" rel="stylesheet"/>
 </head>
 
@@ -83,6 +86,11 @@
 <div style="height: 40px">
 
 </div>
+<div class="mermaid" style="margin-top: 40px; min-height: 50px; text-align: center" id="lineage">
+	flowchart LR
+	{{ lineage }}
+</div>
+
 <div class="container">
 	{% for dataset in datasets %}
 		<div class="dataset-nav" id="{{ dataset.id }}-ds">
@@ -100,7 +108,8 @@
 					<ul class="nav navbar-nav navbar-right">
 						{% for report in dataset.reports %}
 							<li id="{{ report.id }}-report-nav">
-								<a class="anchor" onclick='toggleReport("{{ report.id }}-report")'>{{ report.title }}</a>
+								<a class="anchor"
+								   onclick='toggleReport("{{ report.id }}-report")'>{{ report.title }}</a>
 							</li>
 						{% endfor %}
 					</ul>
@@ -118,9 +127,10 @@
 </div>
 {#{% include 'wrapper/footer.html' %}#}
 {% include 'wrapper/javascript.html' %}
+<script>mermaid.initialize({startOnLoad: true, "flowchart": {"useMaxWidth": true}});</script>
 <script>
 	toggleDataset(Object.keys(dataSetReportMapping)[0])
-	toggleReport(dataSetReportMapping[Object.keys(dataSetReportMapping)[0]][0])
+
 </script>
 </body>
 </html>
