@@ -1,12 +1,13 @@
 from typing import Optional
 from urllib.parse import quote
+import uuid
 
 from pandas_profiling.config import config
 from pandas_profiling.model.messages import MessageType
 from pandas_profiling.report.presentation.core import Container, Table, Warnings
 
 
-def get_dataset_overview(summary):
+def get_dataset_overview(summary, anchor_uuid):
     dataset_info = Table(
         [
             {
@@ -63,13 +64,13 @@ def get_dataset_overview(summary):
 
     return Container(
         [dataset_info, dataset_types],
-        anchor_id="dataset_overview",
+        anchor_id=f'dataset_overview_{anchor_uuid}',
         name="Overview",
         sequence_type="grid",
     )
 
 
-def get_dataset_schema(metadata) -> Optional[Container]:
+def get_dataset_schema(metadata, anchor_uuid) -> Optional[Container]:
     about_dataset = []
     for key in ["description", "creator", "author"]:
         if key in metadata and len(metadata[key]) > 0:
@@ -107,12 +108,12 @@ def get_dataset_schema(metadata) -> Optional[Container]:
     return Container(
         [Table(about_dataset, name="Dataset", anchor_id="metadata_dataset")],
         name="Dataset",
-        anchor_id="dataset",
+        anchor_id=f'dataset_{anchor_uuid}',
         sequence_type="grid",
     )
 
 
-def get_dataset_reproduction(summary: dict):
+def get_dataset_reproduction(summary: dict, anchor_uuid):
     version = summary["package"]["pandas_profiling_version"]
     config = quote(summary["package"]["pandas_profiling_config"])
     date_start = summary["analysis"]["date_start"]
@@ -136,18 +137,18 @@ def get_dataset_reproduction(summary: dict):
             },
         ],
         name="Reproduction",
-        anchor_id="overview_reproduction",
+        anchor_id=f'overview_reproduction_{anchor_uuid}',
     )
 
     return Container(
         [reproduction_table],
         name="Reproduction",
-        anchor_id="reproduction",
+        anchor_id=f'reproduction_{anchor_uuid}',
         sequence_type="grid",
     )
 
 
-def get_dataset_column_definitions(definitions: dict):
+def get_dataset_column_definitions(definitions: dict, anchor_uuid):
     """Generate an overview section for the variable description
 
     Args:
@@ -164,19 +165,19 @@ def get_dataset_column_definitions(definitions: dict):
                 for column, value in definitions.items()
             ],
             name="Variable descriptions",
-            anchor_id="variable_definition_table",
+            anchor_id=f'variable_definition_table_{anchor_uuid}',
         )
     ]
 
     return Container(
         variable_descriptions,
         name="Variables",
-        anchor_id="variable_descriptions",
+        anchor_id=f'variable_descriptions_{anchor_uuid}',
         sequence_type="grid",
     )
 
 
-def get_dataset_warnings(warnings: list) -> Warnings:
+def get_dataset_warnings(warnings: list, anchor_uuid) -> Warnings:
     count = len(
         [
             warning
@@ -184,7 +185,7 @@ def get_dataset_warnings(warnings: list) -> Warnings:
             if warning.message_type != MessageType.REJECTED
         ]
     )
-    return Warnings(warnings=warnings, name=f"Warnings ({count})", anchor_id="warnings")
+    return Warnings(warnings=warnings, name=f"Warnings ({count})", anchor_id=f'warnings_{anchor_uuid}')
 
 
 def get_dataset_items(summary: dict, warnings: list) -> list:
@@ -197,15 +198,16 @@ def get_dataset_items(summary: dict, warnings: list) -> list:
     Returns:
         A list with components for the dataset overview (overview, reproduction, warnings)
     """
+    anchor_uuid = uuid.uuid4()
 
-    items = [get_dataset_overview(summary)]
+    items = [get_dataset_overview(summary, anchor_uuid)]
 
     metadata = {
         key: config["dataset"][key].get(str) for key in config["dataset"].keys()
     }
 
     if len(metadata) > 0 and any(len(value) > 0 for value in metadata.values()):
-        items.append(get_dataset_schema(metadata))
+        items.append(get_dataset_schema(metadata, anchor_uuid))
 
     column_details = {
         key: config["variables"]["descriptions"][key].get(str)
@@ -213,11 +215,11 @@ def get_dataset_items(summary: dict, warnings: list) -> list:
     }
 
     if len(column_details) > 0:
-        items.append(get_dataset_column_definitions(column_details))
+        items.append(get_dataset_column_definitions(column_details, anchor_uuid))
 
     if warnings:
-        items.append(get_dataset_warnings(warnings))
+        items.append(get_dataset_warnings(warnings, anchor_uuid))
 
-    items.append(get_dataset_reproduction(summary))
+    items.append(get_dataset_reproduction(summary, anchor_uuid))
 
     return items
